@@ -1,6 +1,6 @@
 {
   "name": "youtube-downloader",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Baixador de vídeos do YouTube com interface moderna",
   "main": "main.js",
   "scripts": {
@@ -11,7 +11,11 @@
     "build:linux": "electron-builder --linux",
     "check-icon": "node build-icon.js"
   },
-  "keywords": ["youtube", "downloader", "electron"],
+  "keywords": [
+    "youtube",
+    "downloader",
+    "electron"
+  ],
   "author": "Seu Nome",
   "license": "MIT",
   "devDependencies": {
@@ -38,7 +42,9 @@
       {
         "from": "assets/bin",
         "to": "bin",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "asarUnpack": [
@@ -48,7 +54,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "assets/icon.ico",
@@ -58,7 +66,11 @@
       "verifyUpdateCodeSignature": false
     },
     "publish": [
-      { "provider": "github", "owner": "<seu-usuario>", "repo": "<seu-repo>" }
+      {
+        "provider": "github",
+        "owner": "<seu-usuario>",
+        "repo": "<seu-repo>"
+      }
     ],
     "nsis": {
       "oneClick": false,
@@ -73,16 +85,22 @@
       "perMachine": false,
       "runAfterFinish": true,
       "displayLanguageSelector": false,
-      "installerLanguages": ["pt_BR"],
+      "installerLanguages": [
+        "pt_BR"
+      ],
       "language": "1046"
     },
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "category": "AudioVideo",
       "icon": "assets/icon.png"
     },
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "category": "public.app-category.video",
       "icon": "assets/icon.icns"
     }
