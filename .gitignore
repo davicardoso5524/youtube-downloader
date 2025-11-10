@@ -1,0 +1,14 @@
+# Node / Electron
+node_modules/
+dist/
+out/
+*.log
+*.tmp
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Sistema
+Thumbs.db

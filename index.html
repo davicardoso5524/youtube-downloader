@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Downloader</title>
+  <link rel="icon" href="../assets/icon.png" type="image/png">
+  <!-- opcional para Windows -->
+  <link rel="icon" type="image/x-icon" href="../assets/icon.ico">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="background-animation">
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+    <div class="gradient-orb orb-3"></div>
+  </div>
+  
+  <div class="container">
+    <header>
+      <div class="logo-wrapper">
+        <div class="logo-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h1>YouTube Downloader</h1>
+          <p class="subtitle">Baixe vídeos e áudios em alta qualidade</p>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="main-card">
+        <div class="input-section">
+          <div class="input-wrapper">
+            <div class="input-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
+            </div>
+            <input 
+              type="text" 
+              id="url" 
+              placeholder="Cole a URL do YouTube aqui..." 
+              autocomplete="off"
+            >
+          </div>
+        </div>
+
+        <div class="options-grid">
+          <div class="option-card" id="videoOption">
+            <div class="option-icon video">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="23 7 16 12 23 17 23 7"/>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+              </svg>
+            </div>
+            <h3>Vídeo MP4</h3>
+            <p>Alta qualidade, compatível com TVs</p>
+            <div class="option-badge">720p • 30fps</div>
+          </div>
+
+          <div class="option-card" id="audioOption">
+            <div class="option-icon audio">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 18V5l12-2v13"/>
+                <circle cx="6" cy="18" r="3"/>
+                <circle cx="18" cy="16" r="3"/>
+              </svg>
+            </div>
+            <h3>Áudio MP3</h3>
+            <p>Máxima qualidade de som</p>
+            <div class="option-badge">320kbps</div>
+          </div>
+        </div>
+
+        <div class="advanced-options">
+          <button class="advanced-toggle" id="advancedToggle">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 1v6m0 6v6"/>
+              <path d="m1 12 6 0m6 0h6"/>
+            </svg>
+            Opções Avançadas
+            <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          
+          <div class="advanced-content" id="advancedContent">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cookieBrowser">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12a9 9 0 1 1-9-9c.34 0 .68.02 1.02.06"/>
+                    <path d="M22 22 18 18"/>
+                    <path d="M8 12h.01M12 12h.01M16 12h.01"/>
+                  </svg>
+                  Cookies do Navegador
+                </label>
+                <select id="cookieBrowser">
+                  <option value="">Nenhum</option>
+                  <option value="chrome">Chrome</option>
+                  <option value="edge">Edge</option>
+                  <option value="firefox">Firefox</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="rateLimit">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  Limite de Velocidade
+                </label>
+                <input 
+                  type="text" 
+                  id="rateLimit" 
+                  placeholder="Ex: 500K, 1M"
+                >
+              </div>
+            </div>
+
+            <label class="switch-label">
+              <input type="checkbox" id="downloadSubs">
+              <div class="switch">
+                <div class="switch-thumb"></div>
+              </div>
+              <span>Baixar legendas (PT/EN)</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="action-bar">
+          <button id="selectFolder" class="btn-folder">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span id="folderName">Downloads</span>
+          </button>
+          
+          <button id="downloadBtn" class="btn-download">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Baixar Agora
+          </button>
+        </div>
+      </div>
+
+      <div id="progressCard" class="progress-container">
+        <div class="progress-header">
+          <div class="progress-status">
+            <div class="spinner"></div>
+            <h3>Baixando...</h3>
+          </div>
+          <div class="progress-percentage">0%</div>
+        </div>
+        
+        <div class="progress-bar-container">
+          <div id="progressFill" class="progress-bar-fill"></div>
+        </div>
+        
+        <div id="progressLog" class="console-log"></div>
+        
+        <button id="openFolderBtn" class="btn-success">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            <polyline points="10 9 15 14 10 19"/>
+          </svg>
+          Abrir Pasta
+        </button>
+      </div>
+    </main>
+
+    <footer>
+      <p>Desenvolvido com <span class="heart">❤️</span> usando Electron e yt-dlp</p>
+    </footer>
+  </div>
+
+  <input type="hidden" id="downloadPath">
+  <input type="hidden" id="mode" value="video">
+
+  <script src="renderer.js"></script>
+</body>
+</html>
