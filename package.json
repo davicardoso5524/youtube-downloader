@@ -57,6 +57,9 @@
       "artifactName": "${productName}-Setup-${version}.${ext}",
       "verifyUpdateCodeSignature": false
     },
+    "publish": [
+      { "provider": "github", "owner": "<seu-usuario>", "repo": "<seu-repo>" }
+    ],
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
