@@ -9,7 +9,8 @@
     "build:win": "electron-builder --win",
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux",
-    "check-icon": "node build-icon.js"
+    "check-icon": "node build-icon.js",
+    "release:win": "electron-builder --win --publish always"
   },
   "keywords": [
     "youtube",
