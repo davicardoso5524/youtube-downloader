@@ -1,0 +1,109 @@
+{
+  "name": "youtube-downloader",
+  "version": "1.0.1",
+  "description": "Baixador de vídeos do YouTube com interface moderna",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "check-icon": "node build-icon.js",
+    "release:win": "electron-builder --win --publish always"
+  },
+  "keywords": [
+    "youtube",
+    "downloader",
+    "electron"
+  ],
+  "author": "Seu Nome",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^39.2.1",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.youtubedownloader.app",
+    "productName": "YouTubeDownloader",
+    "files": [
+      "**/*",
+      "!dist/**",
+      "!node_modules/**"
+    ],
+    "directories": {
+      "buildResources": "assets",
+      "output": "dist"
+    },
+    "extraResources": [
+      {
+        "from": "assets",
+        "to": "assets"
+      },
+      {
+        "from": "assets/bin",
+        "to": "bin",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "asarUnpack": [
+      "assets/bin/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "requestedExecutionLevel": "asInvoker",
+      "signAndEditExecutable": false,
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "verifyUpdateCodeSignature": false
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "<seu-usuario>",
+        "repo": "<seu-repo>"
+      }
+    ],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false,
+      "shortcutName": "YouTube Downloader",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "perMachine": false,
+      "runAfterFinish": true,
+      "displayLanguageSelector": false,
+      "installerLanguages": [
+        "pt_BR"
+      ],
+      "language": "1046"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "AudioVideo",
+      "icon": "assets/icon.png"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.video",
+      "icon": "assets/icon.icns"
+    }
+  }
+}
