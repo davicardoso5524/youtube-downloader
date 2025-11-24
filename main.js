@@ -150,7 +150,7 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
-// IPC: Obter lista de vídeos de uma playlist
+// IPC: Obter lista de vídeos de uma playlist .
 ipcMain.handle('fetch-playlist', async (event, url) => {
   return new Promise((resolve, reject) => {
     try {
