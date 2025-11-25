@@ -491,9 +491,9 @@ if (deselectAllPlaylistBtn) {
 // Playlist agora é carregada ao clicar em "Baixar Agora" se a URL for uma playlist
 
 // Função para buscar vídeos da playlist
+// Função para buscar vídeos da playlist - COM FEEDBACK DE CARREGAMENTO
 async function fetchPlaylistVideos(url) {
   try {
-    // Mostrar loading
     console.log('Carregando playlist:', url);
     
     if (!playlistModal) {
@@ -501,23 +501,40 @@ async function fetchPlaylistVideos(url) {
       throw new Error('Elemento modal não encontrado');
     }
     
+    // Mostrar modal com animação de carregamento melhorada
     playlistModal.style.display = 'flex';
     
     if (playlistContainer) {
-      playlistContainer.innerHTML = '<div style="text-align: center; color: #a1a1a1; padding: 40px;">Carregando vídeos da playlist...</div>';
+      playlistContainer.innerHTML = `
+        <div style="text-align: center; color: #a1a1a1; padding: 40px; width: 100%;">
+          <div style="margin-bottom: 16px;">
+            <div class="spinner" style="width: 40px; height: 40px; border-width: 3px; margin: 0 auto;"></div>
+          </div>
+          <div style="font-size: 14px;">Carregando vídeos da playlist...</div>
+          <div style="font-size: 12px; margin-top: 8px; opacity: 0.6;">Isso pode levar alguns segundos</div>
+        </div>
+      `;
     }
 
     if (!window.electron || !window.electron.fetchPlaylist) {
       throw new Error('window.electron.fetchPlaylist não disponível');
     }
 
-    const result = await window.electron.fetchPlaylist(url);
+    // Usar Promise.race para timeout de 45 segundos
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Timeout ao carregar playlist')), 45000)
+    );
+
+    const result = await Promise.race([
+      window.electron.fetchPlaylist(url),
+      timeoutPromise
+    ]);
 
     if (result.success) {
       currentPlaylistVideos = result.videos;
       playlistTitle.textContent = result.playlistTitle || 'Selecione os vídeos';
       
-      // Renderizar vídeos
+      // Renderizar vídeos com animação
       renderPlaylistVideos(result.videos);
       updatePlaylistCount();
     } else {
@@ -526,16 +543,25 @@ async function fetchPlaylistVideos(url) {
   } catch (error) {
     console.error('Erro ao carregar playlist:', error);
     if (playlistContainer) {
-      playlistContainer.innerHTML = `<div style="text-align: center; color: #ef4444; padding: 40px;">Erro ao carregar: ${error.message}</div>`;
+      playlistContainer.innerHTML = `
+        <div style="text-align: center; color: #ef4444; padding: 40px;">
+          <div style="font-size: 24px; margin-bottom: 8px;">⚠️</div>
+          <div style="font-weight: 600; margin-bottom: 4px;">Erro ao carregar</div>
+          <div style="font-size: 12px; opacity: 0.8;">${error.message}</div>
+        </div>
+      `;
     }
   }
 }
 
-// Renderizar vídeos da playlist
+// Renderizar vídeos com otimização de performance
 function renderPlaylistVideos(videos) {
   if (!playlistContainer) return;
   
   playlistContainer.innerHTML = '';
+  
+  // Usar DocumentFragment para melhor performance
+  const fragment = document.createDocumentFragment();
   
   videos.forEach((video, index) => {
     const item = document.createElement('div');
@@ -544,11 +570,12 @@ function renderPlaylistVideos(videos) {
     const duration = video.duration ? formatDuration(video.duration) : '--:--';
     const thumbnail = video.thumbnail || '';
     
+    // HTML mais simples e leve
     item.innerHTML = `
       <input type="checkbox" data-url="${video.url}" data-index="${index}">
-      ${thumbnail ? `<img src="${thumbnail}" alt="${video.title}" class="playlist-video-thumbnail">` : '<div style="width: 60px; height: 60px; border-radius: 6px; background: rgba(255,255,255,0.1);"></div>'}
+      ${thumbnail ? `<img src="${thumbnail}" alt="${video.title}" class="playlist-video-thumbnail" loading="lazy">` : '<div style="width: 60px; height: 60px; border-radius: 6px; background: rgba(255,255,255,0.1);"></div>'}
       <div class="playlist-video-info">
-        <div class="playlist-video-title">${video.title}</div>
+        <div class="playlist-video-title" title="${video.title}">${video.title}</div>
         <div class="playlist-video-duration">${duration}</div>
       </div>
     `;
@@ -563,8 +590,10 @@ function renderPlaylistVideos(videos) {
       updatePlaylistCount();
     });
     
-    playlistContainer.appendChild(item);
+    fragment.appendChild(item);
   });
+  
+  playlistContainer.appendChild(fragment);
 }
 
 // Atualizar contagem de selecionados

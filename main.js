@@ -151,23 +151,58 @@ app.on('activate', () => {
 });
 
 // IPC: Obter lista de vídeos de uma playlist .
+// IPC: Obter lista de vídeos de uma playlist - COM SUPORTE A RADIO
 ipcMain.handle('fetch-playlist', async (event, url) => {
   return new Promise((resolve, reject) => {
     try {
-      // Argumentos para listar vídeos SEM extrair formatos (muito mais rápido)
-      const args = [
-        '--dump-json',
-        '--no-warnings',
-        '--quiet',
-        '--skip-download',
-        '--extract-flat=in_playlist', // Não extrai detalhes de cada vídeo
-        url
-      ];
+      // Extrair ID da playlist
+      const playlistIdMatch = url.match(/[?&]list=([^&]+)/);
+      const playlistId = playlistIdMatch ? playlistIdMatch[1] : null;
+      const isRadio = playlistId && playlistId.startsWith('RD');
+
+      console.log(`Carregando: ${isRadio ? 'Rádio' : 'Playlist'}`);
+
+      // Para rádios, tentar extrair vídeos relacionados
+      // Para playlists normais, usar a URL da playlist
+      let targetUrl = url;
+      if (playlistId && !isRadio) {
+        targetUrl = `https://www.youtube.com/playlist?list=${playlistId}`;
+      }
+      // Se for rádio, manter a URL original que contém o vídeo inicial
+
+      // Argumentos para yt-dlp
+      const args = isRadio
+        ? [
+            '--dump-json',
+            '--no-warnings',
+            '--quiet',
+            '--skip-download',
+            '--flat-playlist',
+            '--max-downloads', '50', // Limitar para não demorar muito na rádio
+            url
+          ]
+        : [
+            '--dump-json',
+            '--no-warnings',
+            '--quiet',
+            '--skip-download',
+            '--flat-playlist',
+            '--max-downloads', '500',
+            targetUrl
+          ];
 
       const ytdlp = spawn(ytDlpPath, args, { shell: false });
 
       let output = '';
       let errorOutput = '';
+      let timeoutHandle;
+
+      // Timeout maior para rádio
+      const timeout = isRadio ? 90000 : 60000;
+      timeoutHandle = setTimeout(() => {
+        ytdlp.kill();
+        reject(new Error(`Timeout ao carregar ${isRadio ? 'rádio' : 'playlist'} (${timeout/1000}s)`));
+      }, timeout);
 
       ytdlp.stdout.on('data', (data) => {
         output += data.toString();
@@ -178,89 +213,128 @@ ipcMain.handle('fetch-playlist', async (event, url) => {
       });
 
       ytdlp.on('close', (code) => {
-        if (code === 0) {
+        clearTimeout(timeoutHandle);
+
+        if (code === 0 && output.trim()) {
           try {
-            // Limpar output: remover linhas vazias e caracteres extras
             const cleanOutput = output.trim();
             
-            // Extrair apenas o JSON válido (começa com { ou [ e termina com } ou ])
-            let jsonString = '';
-            let braceCount = 0;
-            let inJson = false;
+            // Tentar parsear múltiplas linhas JSON (cada linha é um objeto)
+            const lines = cleanOutput.split('\n').filter(line => line.trim());
+            let entries = [];
             
-            for (let i = 0; i < cleanOutput.length; i++) {
-              const char = cleanOutput[i];
-              
-              if (!inJson && (char === '{' || char === '[')) {
-                inJson = true;
-                jsonString = char;
-                braceCount = char === '{' ? 1 : 1;
-              } else if (inJson) {
-                jsonString += char;
-                if (char === '{') braceCount++;
-                else if (char === '}') braceCount--;
-                else if (char === '[') braceCount++;
-                else if (char === ']') braceCount--;
-                
-                if (braceCount === 0) {
+            for (const line of lines) {
+              try {
+                const obj = JSON.parse(line);
+                if (obj.entries && Array.isArray(obj.entries)) {
+                  // É um objeto com entries (playlist/rádio)
+                  entries = obj.entries;
                   break;
+                } else if (obj.id) {
+                  // É um vídeo individual
+                  entries.push(obj);
+                }
+              } catch (e) {
+                // Continuar tentando próxima linha
+                continue;
+              }
+            }
+
+            // Se não encontrou entries, tentar parsear como um único JSON
+            if (entries.length === 0) {
+              let jsonString = '';
+              let braceCount = 0;
+              let inJson = false;
+              
+              for (let i = 0; i < cleanOutput.length; i++) {
+                const char = cleanOutput[i];
+                
+                if (!inJson && (char === '{' || char === '[')) {
+                  inJson = true;
+                  jsonString = char;
+                  braceCount = char === '{' ? 1 : 1;
+                } else if (inJson) {
+                  jsonString += char;
+                  if (char === '{') braceCount++;
+                  else if (char === '}') braceCount--;
+                  else if (char === '[') braceCount++;
+                  else if (char === ']') braceCount--;
+                  
+                  if (braceCount === 0) {
+                    break;
+                  }
+                }
+              }
+              
+              if (jsonString) {
+                const data = JSON.parse(jsonString);
+                if (data.entries && Array.isArray(data.entries)) {
+                  entries = data.entries;
+                } else if (data.id) {
+                  entries = [data];
                 }
               }
             }
-            
-            if (!jsonString) {
-              throw new Error('Nenhum JSON encontrado na resposta');
+
+            if (entries.length === 0) {
+              throw new Error('Nenhum vídeo encontrado');
             }
-            
-            const data = JSON.parse(jsonString);
-            
-            // Se for uma playlist, retornar os vídeos
-            if (data.entries) {
-              const videos = data.entries.map(entry => ({
-                id: entry.id,
-                title: entry.title || 'Vídeo sem título',
-                duration: entry.duration || 0,
-                thumbnail: entry.thumbnail || '',
-                url: entry.url || `https://www.youtube.com/watch?v=${entry.id}`,
-                index: entry.playlist_index || 0
-              }));
-              
-              resolve({
-                success: true,
-                isPlaylist: true,
-                playlistTitle: data.title || 'Playlist',
-                playlistDescription: data.description || '',
-                videos: videos,
-                total: videos.length
-              });
-            } else {
-              // Se for um vídeo único
-              resolve({
-                success: true,
-                isPlaylist: false,
-                videos: [{
-                  id: data.id,
-                  title: data.title || 'Vídeo',
-                  duration: data.duration || 0,
-                  thumbnail: data.thumbnail || '',
-                  url: `https://www.youtube.com/watch?v=${data.id}`
-                }],
-                total: 1
-              });
+
+            // Processar vídeos
+            const videos = entries
+              .map((entry, index) => {
+                const videoId = entry.id || '';
+                // Gerar URL de miniatura automaticamente
+                const thumbnail = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+                
+                return {
+                  id: videoId,
+                  title: entry.title || `Vídeo ${index + 1}`,
+                  duration: entry.duration || 0,
+                  thumbnail: thumbnail, // Sempre gerar miniatura
+                  url: `https://www.youtube.com/watch?v=${videoId}`
+                };
+              })
+              .filter(v => v.id && v.title); // Filtrar vídeos válidos
+
+            if (videos.length === 0) {
+              throw new Error('Nenhum vídeo válido encontrado');
             }
+
+            resolve({
+              success: true,
+              isPlaylist: true,
+              isRadio: isRadio,
+              playlistTitle: isRadio ? 'Rádio' : 'Playlist',
+              playlistDescription: isRadio ? `${videos.length} vídeos relacionados` : '',
+              videos: videos,
+              total: videos.length
+            });
+
           } catch (e) {
-            console.error('Erro ao parsear JSON:', e.message);
-            console.error('Output recebido:', output.substring(0, 500));
-            reject(new Error(`Erro ao parsear resposta: ${e.message}`));
+            console.error('Erro ao parsear:', e.message);
+            console.error('Output:', output.substring(0, 500));
+            reject(new Error(`Erro ao processar resposta: ${e.message}`));
+          }
+        } else if (errorOutput) {
+          // Tratamento de erros específicos
+          if (errorOutput.includes('unviewable')) {
+            reject(new Error('Rádio não disponível. Tente uma playlist comum ou um vídeo individual.'));
+          } else if (errorOutput.includes('private')) {
+            reject(new Error('Playlist privada. Verifique as permissões.'));
+          } else {
+            reject(new Error(`Erro: ${errorOutput.split('\n')[0]}`));
           }
         } else {
-          reject(new Error(`Erro ao listar playlist: ${errorOutput}`));
+          reject(new Error('Nenhuma resposta do yt-dlp'));
         }
       });
 
       ytdlp.on('error', (err) => {
-        reject(new Error(`Erro ao executar yt-dlp: ${err.message}`));
+        clearTimeout(timeoutHandle);
+        reject(new Error(`Erro ao executar: ${err.message}`));
       });
+
     } catch (err) {
       reject(err);
     }
